@@ -15,9 +15,9 @@ public class Main {
         FileWriter writer;
         boolean work = true, contains;
         DualMap<String, String> map = new DualMap<>();
-        List<Pair<String, Integer>> wrongs = new LinkedList<>();
+        LinkedList<Pair<String, Integer>> wrongs = new LinkedList<>();
         LinkedList<String> log = new LinkedList<>();
-        Comparator<Pair<String, Integer>> comparator = Comparator.comparing(Pair<String, Integer>::getSecond);
+        Comparator<Pair<String, Integer>> comparator = Comparator.comparing(o -> o.getSecond() * -1);
         while (work) {
             System.out.println("Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):");
             log.add("Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):");
@@ -54,6 +54,11 @@ public class Main {
                     log.add(inF);
                     if (map.containsKey(inF)) {
                         map.remove(inF);
+                        for(Pair<String, Integer> pair: wrongs){
+                            if(pair.getFirst().equals(inF)){
+                                wrongs.remove(pair);
+                            }
+                        }
                         System.out.println("The card has been removed.");
                         log.add("The card has been removed.");
                     } else {
@@ -72,22 +77,26 @@ public class Main {
                     if(wrongs.isEmpty()){
                         System.out.println("There are no cards with errors.");
                         log.add("There are no cards with errors.");
-                        break;
-                    }
-                    wrongs.sort(comparator);
-                    int n = 0, sum = 0;
-                    System.out.print("The hardest cards are ");
-                    log.add("The hardest cards are ");
-                    for (Pair<String, Integer> pair: wrongs){
-                        if(n++ == 3){
-                            break;
+                    } else {
+                        wrongs.sort(comparator);
+                        if(wrongs.size() > 1 && wrongs.peekFirst().getSecond().equals(wrongs.get(1).getSecond())) {
+                            System.out.print("The hardest cards are ");
+                            log.add("The hardest cards are ");
+                            for(Pair<String, Integer> pair: wrongs){
+                                if(pair.getSecond().equals(wrongs.peekFirst().getSecond())) {
+                                    System.out.printf("\"%s\" ", pair.getFirst());
+                                    log.add(String.format("\"%s\" ", pair.getFirst()));
+                                }
+                            }
+                            System.out.printf(". You have %d errors answering them.\n", wrongs.peekFirst().getSecond());
+                            log.add(String.format(". You have %d errors answering them.",  wrongs.peekFirst().getSecond()));
+                        } else{
+                            System.out.printf("The hardest card is \"%s\". You have %d errors answering them.\n",
+                                    wrongs.peekFirst().getFirst(), wrongs.peekFirst().getSecond());
+                            log.add(String.format("The hardest card is \"%s\". You have %d errors answering them.",
+                                    wrongs.peekFirst().getFirst(), wrongs.peekFirst().getSecond()));
                         }
-                        sum += pair.getSecond();
-                        System.out.printf("\"%s\" ", pair.getFirst());
-                        log.add(String.format("\"%s\" ", pair.getFirst()));
                     }
-                    System.out.printf(". You have %d errors answering them.", sum);
-                    log.add(String.format(". You have %d errors answering them.", sum));
                     break;
                 case "import":
                     log.add("import");
@@ -100,6 +109,12 @@ public class Main {
                         Scanner fileScanner = new Scanner(file);
                         String[] wrongsString = fileScanner.nextLine().split(":");
                         for(int i = 0; i < wrongsString.length - 1; i += 2){
+                            for(Pair<String, Integer> pair: wrongs){
+                                if(pair.getFirst().equals(wrongsString[i])){
+                                    wrongs.remove(pair);
+                                    break;
+                                }
+                            }
                             wrongs.add(new Pair<>(wrongsString[i], Integer.parseInt(wrongsString[i + 1])));
                         }
                         while (fileScanner.hasNextLine()) {
@@ -129,7 +144,7 @@ public class Main {
                         }
                         writer.write(pair.getFirst());
                         writer.write(":");
-                        writer.write(pair.getSecond());
+                        writer.write(Integer.toString(pair.getSecond()));
                         writer.write(":");
                     }
                     writer.write("\n");
@@ -189,6 +204,9 @@ public class Main {
                         writer.write(log.pop());
                         writer.write("\n");
                     }
+                    System.out.println("The log has been saved.");
+                    log.add("The log has been saved.");
+                    break;
                 case "exit":
                     System.out.println("Bye bye!");
                     log.add("Bye bye!");
