@@ -6,6 +6,10 @@ import java.io.IOException;
 import java.util.*;
 
 public class Main {
+    private static String toCorrectForm(String in){
+        return in.toLowerCase().replace(",", "").replace(".", "").replace(" ", "");
+    }
+
     public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
         String inS, inF;
@@ -24,12 +28,12 @@ public class Main {
                     log.add("add");
                     System.out.println("The card:");
                     log.add("The card:");
-                    inF = scanner.nextLine();
+                    inF = scanner.nextLine().trim();
                     log.add(inF);
                     if (!map.containsKey(inF)) {
                         System.out.println("The definition of the card:");
                         log.add("The definition of the card:");
-                        inS = scanner.nextLine();
+                        inS = scanner.nextLine().trim();
                         log.add(inS);
                         if (!map.containsValue(inS)) {
                             map.put(inF, inS);
@@ -48,7 +52,7 @@ public class Main {
                     log.add("remove");
                     System.out.println("Which card?");
                     log.add("Which card?");
-                    inF = scanner.nextLine();
+                    inF = scanner.nextLine().trim();
                     log.add(inF);
                     if (map.containsKey(inF)) {
                         map.remove(inF);
@@ -116,7 +120,7 @@ public class Main {
                             wrongs.add(new Pair<>(wrongsString[i], Integer.parseInt(wrongsString[i + 1])));
                         }
                         while (fileScanner.hasNextLine()) {
-                            map.put(fileScanner.nextLine(), fileScanner.nextLine());
+                            map.put(fileScanner.nextLine().trim(), fileScanner.nextLine().trim());
                             it++;
                         }
                         System.out.println(it + " cards have been loaded.");
@@ -165,7 +169,7 @@ public class Main {
                         log.add(String.format("Print the definition of \"%s\":\n", entry.getKey()));
                         inF = scanner.nextLine();
                         log.add(inF);
-                        if (entry.getValue().equals(inF)) {
+                        if (toCorrectForm(entry.getValue()).equals(toCorrectForm(inF))) {
                             System.out.println("Correct!");
                             log.add("Correct!");
                         } else {
