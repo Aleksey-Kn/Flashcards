@@ -1,7 +1,5 @@
 package flashcards;
 
-import kotlin.Pair;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
