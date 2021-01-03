@@ -1,11 +1,18 @@
 package flashcards;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
 public class Main {
+    private static FileWriter writer;
+    private static final LinkedList<Pair<String, Integer>> wrongs = new LinkedList<>();
+    private static final Comparator<Pair<String, Integer>> comparator = Comparator.comparing(o -> o.getSecond() * -1);
+    private static final DualMap<String, String> map = new DualMap<>();
+    private static final LinkedList<String> log = new LinkedList<>();
+
     private static String toCorrectForm(String in){
         return in.toLowerCase().replace(",", "").replace(".", "").replace(" ", "");
     }
@@ -13,13 +20,18 @@ public class Main {
     public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
         String inS, inF;
-        File file;
-        FileWriter writer;
+        File file, imp = null, exp = null;
+        for(int i = 0; i < args.length; i++){
+            if(args[i].equals("-import")){
+                imp = new File(args[++i]);
+            } else if(args[i].equals("-export")){
+                exp = new File(args[++i]);
+            }
+        }
+        if(imp != null){
+            importing(imp);
+        }
         boolean work = true, contains;
-        DualMap<String, String> map = new DualMap<>();
-        LinkedList<Pair<String, Integer>> wrongs = new LinkedList<>();
-        LinkedList<String> log = new LinkedList<>();
-        Comparator<Pair<String, Integer>> comparator = Comparator.comparing(o -> o.getSecond() * -1);
         while (work) {
             System.out.println("Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):");
             log.add("Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):");
@@ -40,12 +52,12 @@ public class Main {
                             System.out.printf("The pair (\"%s\":\"%s\") has been added\n", inF, inS);
                             log.add(String.format("The pair (\"%s\":\"%s\") has been added\n", inF, inS));
                         } else {
-                            System.out.println("The definition already exists");
-                            log.add("The definition already exists");
+                            System.out.println("The definition \"" + inS +"\" already exists");
+                            log.add("The definition \"" + inS +"\" already exists");
                         }
                     } else {
-                        System.out.println("the card already exists");
-                        log.add("the card already exists");
+                        System.out.println("The card \"" + inF +"\" already exists");
+                        log.add("The card \"" + inF +"\" already exists");
                     }
                     break;
                 case "remove":
@@ -93,9 +105,9 @@ public class Main {
                             System.out.printf(". You have %d errors answering them.\n", wrongs.peekFirst().getSecond());
                             log.add(String.format(". You have %d errors answering them.",  wrongs.peekFirst().getSecond()));
                         } else{
-                            System.out.printf("The hardest card is \"%s\". You have %d errors answering them.\n",
+                            System.out.printf("The hardest card is \"%s\". You have %d errors answering it.\n",
                                     wrongs.peekFirst().getFirst(), wrongs.peekFirst().getSecond());
-                            log.add(String.format("The hardest card is \"%s\". You have %d errors answering them.",
+                            log.add(String.format("The hardest card is \"%s\". You have %d errors answering it.",
                                     wrongs.peekFirst().getFirst(), wrongs.peekFirst().getSecond()));
                         }
                     }
@@ -106,30 +118,7 @@ public class Main {
                     log.add("File name:");
                     file = new File(scanner.nextLine());
                     log.add(file.getName());
-                    int it = 0;
-                    if (file.canRead()) {
-                        Scanner fileScanner = new Scanner(file);
-                        String[] wrongsString = fileScanner.nextLine().split(":");
-                        for(int i = 0; i < wrongsString.length - 1; i += 2){
-                            for(Pair<String, Integer> pair: wrongs){
-                                if(pair.getFirst().equals(wrongsString[i])){
-                                    wrongs.remove(pair);
-                                    break;
-                                }
-                            }
-                            wrongs.add(new Pair<>(wrongsString[i], Integer.parseInt(wrongsString[i + 1])));
-                        }
-                        while (fileScanner.hasNextLine()) {
-                            map.put(fileScanner.nextLine().trim(), fileScanner.nextLine().trim());
-                            it++;
-                        }
-                        System.out.println(it + " cards have been loaded.");
-                        log.add(it + " cards have been loaded.");
-                        fileScanner.close();
-                    } else {
-                        System.out.println("File not found.");
-                        log.add("File not found.");
-                    }
+                    importing(file);
                     break;
                 case "export":
                     log.add("export");
@@ -137,25 +126,7 @@ public class Main {
                     log.add("File name:");
                     file = new File(scanner.nextLine());
                     log.add(file.getName());
-                    writer = new FileWriter(file);
-                    wrongs.sort(comparator);
-                    int k = 0;
-                    for (Pair<String, Integer> pair: wrongs){
-                        if(k++ == 3){
-                            break;
-                        }
-                        writer.write(pair.getFirst());
-                        writer.write(":");
-                        writer.write(Integer.toString(pair.getSecond()));
-                        writer.write(":");
-                    }
-                    writer.write("\n");
-                    for (Map.Entry<String, String> entry : map.entrySet()) {
-                        writer.write(entry.getKey() + "\n" + entry.getValue() + "\n");
-                    }
-                    System.out.println(map.size() + " cards have been saved.");
-                    log.add(map.size() + " cards have been saved.");
-                    writer.close();
+                    export(file);
                     break;
                 case "ask":
                     log.add("ask");
@@ -202,19 +173,71 @@ public class Main {
                     file = new File(scanner.nextLine());
                     log.add(file.getName());
                     writer = new FileWriter(file);
-                    while (!log.isEmpty()){
-                        writer.write(log.pop());
-                        writer.write("\n");
-                    }
                     System.out.println("The log has been saved.");
                     log.add("The log has been saved.");
+                    while (!log.isEmpty()){
+                        writer.write(log.pop());
+                        writer.write("\r\n");
+                    }
+                    writer.close();
                     break;
                 case "exit":
+                    if(exp != null){
+                        export(exp);
+                    }
                     System.out.println("Bye bye!");
-                    log.add("Bye bye!");
                     work = false;
                     break;
             }
+        }
+    }
+
+    private static void export(File file) throws IOException {
+        writer = new FileWriter(file);
+        wrongs.sort(comparator);
+        int k = 0;
+        for (Pair<String, Integer> pair: wrongs){
+            if(k++ == 3){
+                break;
+            }
+            writer.write(pair.getFirst());
+            writer.write(":");
+            writer.write(Integer.toString(pair.getSecond()));
+            writer.write(":");
+        }
+        writer.write("\n");
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            writer.write(entry.getKey() + "\n" + entry.getValue() + "\n");
+        }
+        System.out.println(map.size() + " cards have been saved.");
+        log.add(map.size() + " cards have been saved.");
+        writer.close();
+    }
+
+    private static void importing(File file) throws FileNotFoundException {
+        int it = 0;
+        if (file.canRead()) {
+            Scanner fileScanner = new Scanner(file);
+            String[] wrongsString = fileScanner.nextLine().split(":");
+            for(int i = 0; i < wrongsString.length - 1; i += 2){
+                for(Pair<String, Integer> pair: wrongs){
+                    if(pair.getFirst().equals(wrongsString[i])){
+                        wrongs.remove(pair);
+                        break;
+                    }
+                }
+                wrongs.add(new Pair<>(wrongsString[i], Integer.parseInt(wrongsString[i + 1])));
+            }
+            while (fileScanner.hasNextLine()) {
+                map.put(fileScanner.nextLine().trim(), fileScanner.nextLine().trim());
+                it++;
+            }
+            System.out.println(it + " cards have been loaded.");
+            log.add(it + " cards have been loaded.");
+            fileScanner.close();
+        } else {
+            System.out.println("File not found.");
+            log.add("File not found.");
         }
     }
 }
