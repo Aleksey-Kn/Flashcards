@@ -1,8 +1,3 @@
-package flashcards;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +32,6 @@ public class DualMap<Key, Value> implements Map<Key, Value> {
         return main.get(o);
     }
 
-    @Nullable
     @Override
     public Value put(Key o, Value o2) {
         Value v = main.put(o, o2);
@@ -59,7 +53,7 @@ public class DualMap<Key, Value> implements Map<Key, Value> {
     }
 
     @Override
-    public void putAll(@NotNull Map<? extends Key, ? extends Value> map) {
+    public void putAll(Map<? extends Key, ? extends Value> map) {
         for(Map.Entry<? extends Key, ? extends Value> entry: map.entrySet()){
             put(entry.getKey(), entry.getValue());
         }
@@ -71,19 +65,16 @@ public class DualMap<Key, Value> implements Map<Key, Value> {
         revers.clear();
     }
 
-    @NotNull
     @Override
     public Set keySet() {
         return main.keySet();
     }
 
-    @NotNull
     @Override
     public Set values() {
         return revers.keySet();
     }
 
-    @NotNull
     @Override
     public Set<Entry<Key, Value>> entrySet() {
         return main.entrySet();
@@ -131,7 +122,6 @@ public class DualMap<Key, Value> implements Map<Key, Value> {
         return b;
     }
 
-    @Nullable
     @Override
     public Value replace(Key key, Value value) {
         Value b = main.replace(key, value);

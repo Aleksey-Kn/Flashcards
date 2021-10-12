@@ -1,5 +1,3 @@
-package flashcards;
-
 public class Pair<First, Second> {
     First first;
     Second second;
